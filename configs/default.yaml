@@ -1,0 +1,83 @@
+# Default configuration for the full-duplex dialogue data pipeline.
+#
+# These values mirror the CLI defaults of the scripts. They are not auto-loaded
+# by the scripts (each step takes its own flags); use this file as a single
+# source of truth when documenting your run, or wire it up via your own
+# orchestration script if you prefer YAML-driven config.
+
+prompt_generation:
+  style: gpt4o            # gpt4o | doubao
+  rounds: short           # short | long | mixed   (only for style=gpt4o)
+  num_prompts: 1000
+  seed: null              # set to an int for reproducibility
+
+llm:
+  # All credentials live in `.env`. These are documentation defaults.
+  api_key: ${LLM_API_KEY}
+  base_url: ${LLM_BASE_URL}     # blank for OpenAI's default endpoint
+  model: ${LLM_MODEL}
+  temperature: 1.0
+  max_tokens: 4096
+  concurrency: 8
+  max_retries: 5
+
+token_insertion:
+  # Probability that a normal round is rewritten as a fake interruption.
+  # Original pipeline used `if ratio >= 0.6` which corresponds to p=0.4.
+  fake_intr_prob: 0.4
+  # Within a fake-interruption round, probability of using an affirmation
+  # (vs. an unrelated comment). Original used `if ratio2 >= 0.2`.
+  affirm_vs_unrelated: 0.8
+  # Probability that an `interruption`-typed round is rewritten as a real
+  # interruption. Original used `if ratio >= 0.3`.
+  real_intr_prob: 0.7
+  # Optional path to a domain-specific pool of barge-in utterances.
+  # If set, replaces the built-in "talking_to_others" pool for unrelated speech.
+  fake_query_pool: null
+
+  # Continue-listen augmentation (4th control token).
+  # Probability that a round's user turn is split with <|continue-listen|>
+  # inserted between the halves. Original `modify_content_continue2` used
+  # `ratio2 > 0.3` which corresponds to p=0.7.
+  continue_listen_prob: 0.7
+  # Fraction of continue-listen augmentations that use a *double* split
+  # (two <|continue-listen|> insertions, three user fragments) instead of a
+  # single split. 0.286 matches the original (1 - 0.8) / (1 - 0.3) ratio.
+  continue_listen_double_frac: 0.286
+  # Skip continue-listen augmentation when the user text has fewer than this
+  # many alphabetic (Unicode L*) characters.
+  continue_listen_min_letters: 5
+
+flatten:
+  # Output schema of step 06. 'openai' is friendly for OSS SFT frameworks;
+  # 'hy_yzs' is the canonical {input, output} [CHAT_SEP] format actually
+  # used to train the paper's model.
+  format: openai
+  # Strip the internal <|interrupted|> marker before writing.
+  strip_interrupted: false
+  # Also strip residual 'interruption' / '（interruption）' strings that
+  # occasionally leak from the LLM (ports HYyzs_clean_data.py).
+  strip_interruption_artifacts: true
+
+finalize:
+  # 'none'  -> emit records as-is
+  # 'strip' -> remove trailing punctuation from each [CHAT_SEP] segment of `input`
+  # 'add'   -> add a Chinese period to any segment lacking trailing punctuation
+  # 'all3'  -> emit three copies per record (base + stripped + added). This
+  #            reproduces the canonical training augmentation used in the
+  #            original repo (train_fullduplex_HYyzs_Cleaned_PunctuaionCombined).
+  punctuation: all3
+  shuffle: true
+
+output:
+  base_dir: outputs
+  prompts_jsonl: outputs/prompts.jsonl
+  raw_answers_jsonl: outputs/raw_answers.jsonl
+  answers_jsonl: outputs/answers.jsonl
+  answers_filtered_jsonl: outputs/answers_filtered.jsonl
+  answers_clean_jsonl: outputs/answers_clean.jsonl
+  interrupt_q_txt: outputs/interrupt_Q.txt
+  answers_tokenized_jsonl: outputs/answers_tokenized.jsonl
+  openai_jsonl: outputs/fullduplex_sft_openai.jsonl
+  hy_yzs_jsonl: outputs/fullduplex_sft_hy_yzs.jsonl
+  final_training_jsonl: outputs/fullduplex_sft_final.jsonl
