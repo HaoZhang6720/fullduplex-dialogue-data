@@ -6,7 +6,7 @@ data for SFT, where the assistant must learn when to **start speaking**,
 the user actually interrupts.
 
 The data design follows the paper
-**"OpenSpeechLM: A Full-Duplex Speech Language Model"**
+**"Llm-enhanced dialogue management for full-duplex spoken dialogue systems"**
 ([arXiv:2502.14145](https://arxiv.org/pdf/2502.14145)), section on data construction.
 
 > **TL;DR.** Generate bilingual (EN/ZH) multi-round dialogues with an LLM,
