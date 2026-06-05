@@ -26,12 +26,6 @@ Two output formats are supported via ``--format``:
           ...
       ]}
 
-* ``hy_yzs`` (canonical): the format actually used to train the model
-  described in the paper. One line per dialogue::
-
-      {"input":  "user1[CHAT_SEP]user2[CHAT_SEP]...",
-       "output": "<|switch-to-speak|> a1 <|switch-to-listen|>[CHAT_SEP]<|continue-listen|>[CHAT_SEP]..."}
-
 This merges the original four scripts:
 
 * ``Step_final_OpenAI_format_norm.py``
@@ -55,7 +49,7 @@ from typing import Iterable, List
 CHAT_SEP = "[CHAT_SEP]"
 
 # Artifact strings that occasionally leak from the LLM into the user side and
-# that we want to strip on the way out, matching `HYyzs_clean_data.py`.
+# that we want to strip on the way out.
 _ARTIFACT_STRINGS = [
     " <|interrupted|>", "<|interrupted|>",
     " interruption", "interruption",
@@ -135,20 +129,6 @@ def dialogue_to_messages(
     return messages
 
 
-def messages_to_hy_yzs(messages: List[dict]) -> dict:
-    """Convert OpenAI messages into the HY YiZhangShi ``{input, output}`` format,
-    joining user and assistant streams with ``[CHAT_SEP]``."""
-    user_parts, assistant_parts = [], []
-    for m in messages:
-        if m["role"] == "user":
-            user_parts.append(m["content"])
-        elif m["role"] == "assistant":
-            assistant_parts.append(m["content"])
-    return {
-        "input": CHAT_SEP.join(user_parts),
-        "output": CHAT_SEP.join(assistant_parts),
-    }
-
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Flatten tokenized dialogues to chat JSONL.")
@@ -159,16 +139,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out", required=True, help="Output chat-format JSONL.")
     p.add_argument("--format", choices=["openai", "hy_yzs"], default="openai",
                    help="Output schema. 'openai' = standard messages JSONL "
-                        "(default, friendly for OSS SFT frameworks). "
-                        "'hy_yzs' = canonical {input, output} [CHAT_SEP]-joined "
-                        "format actually used to train the paper's model.")
+                        "(default, friendly for OSS SFT frameworks). ")
     p.add_argument("--strip-interrupted", action="store_true",
                    help="Remove the <|interrupted|> marker from every message "
                         "before writing.")
     p.add_argument("--strip-interruption-artifacts", action="store_true",
                    help="Also remove residual 'interruption' / '（interruption）' "
-                        "strings that occasionally leak from the LLM (ports "
-                        "HYyzs_clean_data.py).")
+                        "strings that occasionally leak from the LLM.")
     return p.parse_args()
 
 
