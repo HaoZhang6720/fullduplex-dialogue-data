@@ -60,9 +60,7 @@ marker:
 
 All seven concrete scenarios the pipeline produces, each shown once in
 English and once in Chinese. The same dialogues are reproduced verbatim in
-[`examples/sample_output.jsonl`](examples/sample_output.jsonl) (OpenAI format)
-and [`examples/sample_output_hy_yzs.jsonl`](examples/sample_output_hy_yzs.jsonl)
-(canonical HY format).
+[`examples/sample_output.jsonl`](examples/sample_output.jsonl) (OpenAI format).
 
 #### Scenario 1 -- `normal` (no interruption)
 
@@ -324,8 +322,6 @@ The pipeline produces three SFT-ready JSONL files:
 
 * `outputs/fullduplex_sft_openai.jsonl` -- OpenAI `messages` format (good
   default for most OSS SFT frameworks).
-* `outputs/fullduplex_sft_hy_yzs.jsonl` -- canonical HY YiZhangShi
-  `{input, output}` `[CHAT_SEP]` format.
 * `outputs/fullduplex_sft_final.jsonl` -- the **actual training file**: the
   HY format with 3x punctuation augmentation (base + trailing-punct stripped
   + Chinese-period added) and global shuffle.
@@ -441,9 +437,7 @@ The defaults mirror the thresholds used in the original
 --in PATH                            Input JSONL (repeatable; multiple files concatenated).
 --out PATH                           Output chat-format JSONL.
 --format {openai,hy_yzs}             Output schema. Default 'openai' is standard
-                                     {messages: [...]}. 'hy_yzs' is the canonical
-                                     {input, output} [CHAT_SEP]-joined format
-                                     actually used to train the paper's model.
+                                     {messages: [...]}. 
 --strip-interrupted                  Remove the <|interrupted|> marker from every
                                      message before writing.
 --strip-interruption-artifacts       Also remove residual 'interruption' /
@@ -495,22 +489,8 @@ See [`examples/sample_output.jsonl`](examples/sample_output.jsonl) for
 hand-crafted examples covering all five states (normal, real INTR, fake INTR
 affirmation, fake INTR unrelated, continue-listen).
 
-### 7.2 HY YiZhangShi (canonical training) format
 
-This is what was actually used to train the model in the paper. Each line of
-`fullduplex_sft_hy_yzs.jsonl` is one dialogue collapsed into two strings
-joined by `[CHAT_SEP]`:
-
-```json
-{
-  "input":  "What's the weather like tomorrow?[CHAT_SEP]Actually, can you tell me about today's rain?",
-  "output": "<|switch-to-speak|> Tomorrow will be mostly sunny with a high around [CHAT_SEP]<|switch-to-speak|> Today's rainfall probability is 40%. <|switch-to-listen|>"
-}
-```
-
-See [`examples/sample_output_hy_yzs.jsonl`](examples/sample_output_hy_yzs.jsonl).
-
-### 7.3 Final training file (3x punctuation-augmented + shuffled)
+### 7.2 Final training file (3x punctuation-augmented + shuffled)
 
 `fullduplex_sft_final.jsonl` is what step 07 produces and what you actually
 feed to your trainer. Each base dialogue is replicated three times:
@@ -550,10 +530,6 @@ python scripts/05_add_tokens.py \
     --continue-listen-double-frac 0.2
 ```
 
-### Disable the 3x punctuation augmentation
-
-Set `--punctuation none` (or skip step 07 entirely and train on
-`fullduplex_sft_hy_yzs.jsonl` directly).
 
 ### Use a domain-specific barge-in pool
 
@@ -569,29 +545,6 @@ python scripts/05_add_tokens.py \
 ```
 
 ---
-
-## 9. Notes on differences from the original scripts
-
-- The original pipeline lived in many parallel one-shot scripts with hardcoded
-  paths (`./Outputs/answer_combined_token_norm.txt`, ...). Everything is now
-  driven by `--in` / `--out` flags.
-- The token-insertion logic was split across
-  `Step4_add_tokens_norm.py`, `Step5_add_tokens_real_fake_1.py`,
-  `Step5_add_tokens_real_fake_2.py`, `_v2.py` variants, and
-  `add_continue_listen/Step5_add_tokens_continueListen_only.py`. They are
-  merged into a single `05_add_tokens.py` that exposes the original
-  probabilities as CLI flags. The original behavior is reproduced exactly
-  when defaults are used.
-- The two output-format scripts (`Step_final_OpenAI_format_*.py` and
-  `Step_final_HY_YiZhangShi_*.py`) are merged into
-  `06_to_openai_jsonl.py` with a `--format` switch.
-- `Combine_jsonl_files.py`, `Combine_jsonl_files_then_shuffle.py`,
-  `HYyzs_clean_data.py`, and `modify_punctuation.py` are merged into the new
-  `07_finalize.py`.
-- TTS-related scripts (`Parse_for_TTS.py`, `Step5_..._for_TTS.py`),
-  internal HY tokenizer code (`HY_codes/`), and the VAD folders are **not**
-  bundled in this OSS release; they are infrastructure-specific. Open an
-  issue if you need text-to-text features beyond what is shipped.
 
 ---
 
@@ -640,8 +593,3 @@ cite the paper that motivated it:
 ```
 
 ---
-
-## 11. Acknowledgements
-
-The original prototype scripts were written under the Tencent full-duplex
-project; this repository repackages and cleans them up for community use.
