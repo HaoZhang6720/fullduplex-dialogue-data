@@ -14,9 +14,8 @@ The data design follows the paper
 > as **real** or **fake** interruptions, **plus** split some user turns with
 > a `<|continue-listen|>` mid-utterance marker. Insert the four control tokens
 > `<|switch-to-speak|>`, `<|switch-to-listen|>`, `<|continue_speak|>`,
-> `<|continue-listen|>`. The output is JSONL ready for SFT, in either
-> standard OpenAI `messages` format or the HY YiZhangShi (腾讯混元一站式)
-> `{input, output}` `[CHAT_SEP]` format actually used to train the paper's model.
+> `<|continue-listen|>`. The output is JSONL ready for SFT, in 
+> standard OpenAI `messages` format.
 
 > **A note on timing and LLM choice.** This implementation was built in
 > **early 2024**. Since then the instruction-following ability and overall
