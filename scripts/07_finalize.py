@@ -22,8 +22,7 @@ chain did:
    ``--shuffle`` is passed, so different punctuation variants are interleaved.
 
 Input is the HY YiZhangShi format produced by ``06_to_chat_jsonl.py --format
-hy_yzs``: one line per dialogue with ``{"input": "...[CHAT_SEP]...",
-"output": "...[CHAT_SEP]..."}``.
+hy_yzs``.
 """
 
 from __future__ import annotations
